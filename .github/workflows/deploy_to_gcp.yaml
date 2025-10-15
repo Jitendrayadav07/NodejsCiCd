@@ -22,7 +22,7 @@ jobs:
 
       # 3️⃣ Install dependencies locally (for validation)
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       # 4️⃣ Optional: Run basic test or lint (safe to skip if not needed)
       # - name: Run tests
@@ -53,5 +53,5 @@ jobs:
           port: 22
           script: |
             cd /home/ubuntu/NodejsCiCd
-            npm ci --only=production
+            npm install
             pm2 restart NodejsCiCdBackend || pm2 start server.js --name NodejsCiCdBackend
