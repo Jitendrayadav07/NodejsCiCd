@@ -1,0 +1,57 @@
+name: CICD Pipeline - Node.js Backend
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    name: Deploy Node.js Backend to GCP VM
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout the latest code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2️⃣ Setup Node.js (you’re using v22.x)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # 3️⃣ Install dependencies locally (for validation)
+      - name: Install dependencies
+        run: npm ci
+
+      # 4️⃣ Optional: Run basic test or lint (safe to skip if not needed)
+      # - name: Run tests
+      #   run: npm test
+
+      # 5️⃣ Deploy updated code to GCP VM
+      - name: Upload code to GCP VM
+        uses: easingthemes/ssh-deploy@v2.1.5
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_KEY }}
+          REMOTE_HOST: "34.14.201.174"
+          REMOTE_USER: "ubuntu"
+          SOURCE: "."
+          TARGET: "/home/ubuntu/NodejsCiCd"
+          EXCLUDE: |
+            .git/
+            node_modules/
+            .github/
+            .env
+
+      # 6️⃣ Restart the backend using PM2
+      - name: Restart Node.js app via PM2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: "34.14.201.174"
+          username: "ubuntu"
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          script: |
+            cd /home/ubuntu/NodejsCiCd
+            npm ci --only=production
+            pm2 restart NodejsCiCdBackend || pm2 start server.js --name NodejsCiCdBackend
