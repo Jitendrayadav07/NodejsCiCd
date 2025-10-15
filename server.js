@@ -18,6 +18,10 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok' });
 });
 
+app.get('/test', (req, res) => {
+    res.json({ message: 'Hello World' });
+});
+
 app.use('/api', routes);
 
 // Not Found handler
