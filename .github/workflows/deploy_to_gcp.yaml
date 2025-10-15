@@ -10,36 +10,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup Node.js locally (optional, for npm install/test)
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      # 3️⃣ Install dependencies locally (optional)
       - name: Install dependencies locally
         run: npm install
 
-      # 4️⃣ Deploy code to server (excluding .env)
       - name: Upload code to GCP VM
         uses: easingthemes/ssh-deploy@v2.1.5
         with:
-          ssh-private-key: ${{ secrets.SSH_KEY }}
-          remote-user: ubuntu
-          server-ip: 34.14.201.174
-          remote-path: /home/ubuntu/NodejsCiCd
-          local-path: .
-          exclude: |
-            .git/
-            node_modules/
-            .github/
-            .env
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_KEY }}
+          REMOTE_USER: ubuntu
+          REMOTE_HOST: 34.14.201.174
+          SOURCE: .
+          TARGET: /home/ubuntu/NodejsCiCd
+          ARGS: "--exclude .git/ --exclude node_modules/ --exclude .github/ --exclude .env"
 
-      # 5️⃣ Install dependencies and restart backend via PM2 on server
       - name: Restart Node.js app via PM2
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -48,15 +39,8 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: 22
           script: |
-            # Load NVM so pm2 and Node.js are available
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-
-            # Go to project directory
             cd /home/ubuntu/NodejsCiCd
-
-            # Install server dependencies
             npm install
-
-            # Restart the app with PM2 (start if not running)
             pm2 restart NodejsCiCdBackend || pm2 start server.js --name NodejsCiCdBackend
